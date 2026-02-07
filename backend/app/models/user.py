@@ -22,7 +22,9 @@ def create_user_doc(
         "phone": None,
         "instagram": None,
         "hobbies": [],
-        "looking_for": None,  # "friend" | "date" | "both"
+        "year": None,          # "freshman" | "sophomore" | "junior" | "senior" | "grad" | "other"
+        "vibe_answers": {},     # {"weekend": "out", "love_language": "time", "red_flag": "flaky"}
+        "looking_for": None,   # "friend" | "date" | "both"
         "gender": None,
         "interested_in": [],
         "zodiac": {
@@ -54,6 +56,8 @@ def serialize_user(user: dict) -> dict:
         "phone": user.get("phone"),
         "instagram": user.get("instagram"),
         "hobbies": user.get("hobbies", []),
+        "year": user.get("year"),
+        "vibe_answers": user.get("vibe_answers", {}),
         "looking_for": user.get("looking_for"),
         "gender": user.get("gender"),
         "interested_in": user.get("interested_in", []),

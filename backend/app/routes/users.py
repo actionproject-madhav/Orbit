@@ -35,8 +35,8 @@ def update_me():
     # Allowed fields to update
     allowed_fields = [
         "name", "dob", "birth_time", "birth_location",
-        "phone", "instagram", "hobbies", "looking_for",
-        "gender", "interested_in",
+        "year", "phone", "instagram", "hobbies",
+        "vibe_answers", "looking_for", "gender", "interested_in",
     ]
 
     update = {}
