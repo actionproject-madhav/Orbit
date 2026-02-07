@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+body {
+  margin: 0;
+  background: #000;
+  overflow: hidden;
+}
+
+.gridCanvas {
+  z-index: -1;
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  width: 100%;
+  opacity: 0.15; /* Subtle! */
+}
+
+/* Your content goes here */
+.content {
+  position: relative;
+  z-index: 1;
+  color: white;
+  padding: 50px;
+  font-family: 'Helvetica Neue', sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div class="content">
+  <h1>Your Content Here</h1>
+  <p>The grid is in the background</p>
+</div>
+
+<script>
+// Point class (3D coordinates)
+class Point {
+  constructor(x, y, z) {
+    this.x = x;
+    this.y = y;
+    this.z = z;
+  }
+  
+  // Project 3D point to 2D screen space
+  project(camera) {
+    const scale = camera.z / (camera.z - this.z);
+    return {
+      x: (this.x - camera.x) * scale + camera.x,
+      y: (this.y - camera.y) * scale + camera.y
+    };
+  }
+}
+
+// Line class
+class Line {
+  constructor(start, end) {
+    this.start = start;
+    this.end = end;
+  }
+  
+  draw(ctx, camera) {
+    const p1 = this.start.project(camera);
+    const p2 = this.end.project(camera);
+    
+    ctx.beginPath();
+    ctx.moveTo(p1.x, p1.y);
+    ctx.lineTo(p2.x, p2.y);
+    ctx.stroke();
+  }
+}
+
+// Grid system
+class Grid {
+  constructor() {
+    this.canvas = document.createElement("canvas");
+    this.canvas.className = "gridCanvas";
+    this.ctx = this.canvas.getContext("2d");
+    
+    if (!this.ctx) {
+      console.error("Could not get canvas context");
+      return;
+    }
+    
+    document.body.appendChild(this.canvas);
+    
+    // Mouse tracking
+    this.mouse = { x: innerWidth / 2, y: innerHeight / 2 };
+    this.targetMouse = { x: innerWidth / 2, y: innerHeight / 2 };
+    
+    document.addEventListener('mousemove', (e) => {
+      this.targetMouse.x = e.clientX;
+      this.targetMouse.y = e.clientY;
+    });
+    
+    this.resize();
+    window.addEventListener('resize', () => this.resize());
+    this.animate();
+  }
+  
+  resize() {
+    this.canvas.width = innerWidth;
+    this.canvas.height = innerHeight;
+    
+    // Camera setup (matching Co-Star's)
+    this.camera = new Point(innerWidth / 2, innerHeight / 2, -81);
+    
+    // Create grid lines
+    this.createGrid();
+  }
+  
+  createGrid() {
+    this.lines = [];
+    
+    const gridSize = 80; // Spacing between lines
+    const cols = Math.ceil(innerWidth / gridSize) + 10;
+    const rows = Math.ceil(innerHeight / gridSize) + 10;
+    
+    // Calculate plane Y position (Co-Star's formula)
+    const planeY = this.camera.y - 
+      (innerHeight / 2 - this.camera.y) * 
+      (this.camera.z - 100) / this.camera.z;
+    
+    // Z positions for depth
+    const nearZ = 100;
+    const farZ = -80;
+    
+    // Horizontal lines
+    for (let i = 0; i <= rows; i++) {
+      const y = i * gridSize - gridSize * 5;
+      const z = nearZ - (i / rows) * (nearZ - farZ);
+      
+      this.lines.push(new Line(
+        new Point(-innerWidth, y, z),
+        new Point(innerWidth * 2, y, z)
+      ));
+    }
+    
+    // Vertical lines
+    for (let i = 0; i <= cols; i++) {
+      const x = i * gridSize - gridSize * 5;
+      
+      this.lines.push(new Line(
+        new Point(x, -innerHeight, nearZ),
+        new Point(x, innerHeight * 2, farZ)
+      ));
+    }
+  }
+  
+  animate() {
+    // Smooth mouse following
+    this.mouse.x += (this.targetMouse.x - this.mouse.x) * 0.05;
+    this.mouse.y += (this.targetMouse.y - this.mouse.y) * 0.05;
+    
+    // Update camera position based on mouse (SUBTLE movement)
+    const offsetX = (this.mouse.x - innerWidth / 2) * 0.05; // 0.05 = subtle!
+    const offsetY = (this.mouse.y - innerHeight / 2) * 0.05;
+    
+    this.camera.x = innerWidth / 2 + offsetX;
+    this.camera.y = innerHeight / 2 + offsetY;
+    
+    // Clear canvas
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    
+    // Draw grid
+    this.ctx.strokeStyle = '#ffffff';
+    this.ctx.lineWidth = 1;
+    
+    this.lines.forEach(line => line.draw(this.ctx, this.camera));
+    
+    requestAnimationFrame(() => this.animate());
+  }
+}
+
+// Initialize
+new Grid();
+</script>
+
+</body>
+</html>
